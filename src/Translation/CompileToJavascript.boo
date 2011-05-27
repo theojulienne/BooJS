@@ -109,7 +109,7 @@ public class CompileToJavascript( Parse ):
 		# turn getters/setters into methods and to call __defineSetter__ in constructor
 		Add( ReformPropertiesForJavascript( ) )
 		
-		Add( PrintBoo( ) )
+		#Add( PrintBoo( ) )
 		
 		Add( JavascriptTranslationStep( ) )
 		

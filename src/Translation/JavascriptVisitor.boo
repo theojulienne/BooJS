@@ -21,11 +21,32 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 	def WriteOperator( text as string ):
 		Write( text )
 	
+
+	## Imports
+	def OnImport( node as Import ):
+		Write( 'import(' )
+		WriteStringLiteral( node.Namespace )
+
+		if node.AssemblyReference != null or node.Alias != null:
+			Write( ", {" )
+
+			if node.AssemblyReference != null:
+				Write("from: ")
+				WriteStringLiteral( node.AssemblyReference.Name )
+
+			if node.Alias != null:
+				if node.AssemblyReference != null:
+					Write( ", " )
+
+				Write( 'as: "' )
+				Visit( node.Alias )
+				Write( '"' )
+
+			Write("}")
+
+		WriteLine( ');' )
 	
 	## Statements
-	
-	
-	
 	def OnExpressionStatement( node as ExpressionStatement ):
 		WriteIndented( )
 		Visit( node.Expression )
@@ -160,7 +181,25 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 		WriteLine( )
 		Visit( method.Body )
 		EndBlock( )	
+	
+	def OnRELiteralExpression( node as RELiteralExpression ):
+		Write( "/" )
+		Write( node.Pattern )
+		Write( "/g" )
+
+	def OnArrayLiteralExpression( node as ArrayLiteralExpression ):
+		Write("[");
+		i = 0
+		numItems = node.Items.Count
 		
+		if numItems != 0:
+			for item in node.Items:
+				if i != 0:
+					Write(", ")
+				Visit( item )
+				i++
+		Write("]")
+
 	def OnSelfLiteralExpression( node as SelfLiteralExpression ):
 		WriteKeyword( "this" )
 		
@@ -304,7 +343,7 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 		WriteBlock( node.Block )
 		
 	## Block Stuff
-	
+
 	new def WriteParameterList( items as ParameterDeclarationCollection, start as string, end as string ):
 		Write( start )
 		
@@ -395,16 +434,14 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 		
 	def OnConditionalExpression( e as ConditionalExpression ):
 		# (a if condition else b)
-		raise NotImplementedException( "Not Implemented: " + e.ToString( ) )
-		/*
-		Write( "// TODO: (" )
-		Visit( e.TrueValue )
-		WriteKeyword( " if " )
+		# (condition?a:b)
+		Write( "(" )
 		Visit( e.Condition )
-		WriteKeyword( " else " )
+		Write( "?" )
+		Visit( e.TrueValue )
+		Write( ":" )
 		Visit( e.FalseValue )
 		Write( ")" )
-		*/
 
 	def OnIfStatement( node as IfStatement ):
 		WriteIfBlock( "if", node )

@@ -6,7 +6,7 @@ import Translation
 
 import System.IO
 
-inputfile = FileInput( "test.boo" )
+inputfile = FileInput( argv[0] )
 
 output = StringWriter( )
 
@@ -18,10 +18,8 @@ booc.Parameters.OutputWriter = output
 
 compileContext = booc.Run( )
 
-print "Errors: "
+print "/*"
 print compileContext.Errors
-
-
-print "Code: "
+print "*/"
 print output.ToString( )
 

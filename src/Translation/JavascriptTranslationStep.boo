@@ -1,6 +1,7 @@
 namespace Translation
 
 import Boo.Lang.Compiler.Steps
+#import Boo.Lang.Compiler.Ast.Visitors
 
 public class JavascriptTranslationStep( AbstractCompilerStep ):
 	override def Run( ) as void:

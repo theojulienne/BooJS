@@ -26,13 +26,17 @@ public class ReformPropertiesForJavascript( AbstractNamespaceSensitiveVisitorCom
 		
 		setter as Method = node.Setter
 		getter as Method = node.Getter
-		
-		
-		# add the setter function to the class
-		parent.Members.Add( setter )
-		# replace this node with a getter function
-		parent.Replace( node, getter )
-		
+
+		if setter and getter:
+			parent.Members.Add( setter )   # add the setter function to the class
+			parent.Replace( node, getter ) # replace this node with a getter function
+		elif getter:
+			parent.Replace( node, getter )
+		elif setter:
+			parent.Replace( node, setter )
+		else:
+			print "A property with neither a setter nor a getter?"
+
 		# find a constructor
 		constr as Constructor
 		for member in parent.Members:
@@ -41,8 +45,7 @@ public class ReformPropertiesForJavascript( AbstractNamespaceSensitiveVisitorCom
 				break
 		
 		# insert at beginning of constructor
-		constr.Body.Insert( 0, jsPropertyInvoker( 'defineSetter', 'set', node.Name ) )
-		constr.Body.Insert( 0, jsPropertyInvoker( 'defineGetter', 'get', node.Name ) )
-		
-		
-	
+		if setter:
+			constr.Body.Insert( 0, jsPropertyInvoker( 'defineSetter', 'set', node.Name ) )
+		if getter:
+			constr.Body.Insert( 0, jsPropertyInvoker( 'defineGetter', 'get', node.Name ) )

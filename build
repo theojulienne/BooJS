@@ -1,0 +1,3 @@
+#!/bin/bash
+
+booc -o:bin/boojs.mono src/compile.boo src/Translation/*.boo

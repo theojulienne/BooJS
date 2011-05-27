@@ -1,0 +1,7 @@
+#!/bin/bash
+
+TEST_DIR="tests"
+BIN_DIR="bin"
+
+rm $TEST_DIR/*.{js,boo.out,js.out}
+rm $BIN_DIR/*
