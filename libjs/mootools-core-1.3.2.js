@@ -818,6 +818,12 @@ var Class = this.Class = new Type('Class', function(params){
 	newClass.prototype.$constructor = newClass;
 	newClass.prototype.parent = parent;
 
+	// --- CUSTOM ADDITION ---
+	if (params.statics)
+		for (var i in params.statics)
+			newClass[i] = params.statics[i];
+	// --- END CUSTOM ADDITION ---
+
 	return newClass;
 });
 

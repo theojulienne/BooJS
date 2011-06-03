@@ -11,19 +11,24 @@ YELLOW='\e[1;33m'
 BLUE='\e[1;34m'
 CYAN='\e[1;35m'
 NO_COLOR='\e[0m'
+SCREEN_WIDTH=80
 
 NUM_TESTS=0
 NUM_PASSED=0
 NUM_FAILED=0
+
+# change to /dev/null to disable logging
+LOG_FILE="tests_log"
 
 if [ ! -f $BIN_DIR/boojs.mono ]; then
 	echo "Executable not found. Please run ./build first."
 	exit 1
 fi
 
-for TEST_NAME in $(cd $TEST_DIR && ls *.boo | gawk -F '.' '{print $1}'); do
-	
-	printf "%-70s" "Testing $TEST_NAME..."
+
+function runtest {
+	TEST_NAME=$1
+	printf "%-`expr $SCREEN_WIDTH - 8`s" "Testing $TEST_NAME..."
 	
     # clear/create file
     > $TEST_DIR/$TEST_NAME.js
@@ -42,7 +47,7 @@ for TEST_NAME in $(cd $TEST_DIR && ls *.boo | gawk -F '.' '{print $1}'); do
 	# run in d8
     d8 $JS_LIBS tests/$TEST_NAME.js > tests/$TEST_NAME.js.out
 
-    # results time
+    # count the differences to know if we failed
 	FAILED=$(diff -y --suppress-common-lines tests/$TEST_NAME.boo.out tests/$TEST_NAME.js.out | wc -l)
 	if [ $FAILED -ne 0 ]; then
 		echo -e $RED"FAILED!"$NO_COLOR
@@ -54,24 +59,48 @@ for TEST_NAME in $(cd $TEST_DIR && ls *.boo | gawk -F '.' '{print $1}'); do
 	let NUM_TESTS++
 
 	if [ $VERBOSE -ne 0 ]; then
+		# print the differences
 		diff --suppress-common-lines tests/$TEST_NAME.boo.out tests/$TEST_NAME.js.out
 	fi
-done
+}
 
-if [ $NUM_FAILED -eq 0 ]; then
-	echo
-	echo -e $CYAN"  All tests passed! You are awesome!"$NO_COLOR
-	echo
-	exit 0
-else
-	if [ $NUM_PASSED -eq 0 ]; then
-		echo -ne $RED
+if [ $# -eq 0 ]; then
+	for TEST_NAME in $(cd $TEST_DIR && ls *.boo | perl -pe '$_=~s/.boo$//;'); do
+		runtest $TEST_NAME
+	done
+
+	# Print out the results
+	if [ $NUM_FAILED -eq 0 ]; then
+		echo
+		echo -e $CYAN"  All tests passed! You are awesome!"$NO_COLOR
+		echo
+		exit 0
 	else
-		echo -ne $YELLOW
-	fi
+		if [ $NUM_PASSED -eq 0 ]; then
+			echo -ne $RED
+		else
+			echo -ne $YELLOW
+		fi
+	
+		# summary
+		echo -ne "$NUM_TESTS tests. $NUM_PASSED passed. $NUM_FAILED failed. "
+		perl -e "printf(\"%2.1f%% pass rate.\\n\", $NUM_PASSED/$NUM_TESTS*100)"
+		echo -ne $NO_COLOR
 
-	echo -ne "$NUM_TESTS tests. $NUM_PASSED passed. $NUM_FAILED failed. "
-	perl -e "printf(\"%2.1f%% pass rate.\\n\", $NUM_PASSED/$NUM_TESTS*100)"
-	echo -ne $NO_COLOR
-	exit 1
+		# logging
+		echo >> $LOG_FILE
+		echo "$NUM_TESTS tests. $NUM_PASSED passed. $NUM_FAILED failed." >> $LOG_FILE
+
+		exit 1
+	fi
+else
+	while true; do
+		if [ $1 ]; then
+			runtest $1
+			shift
+		else
+			break
+		fi
+	done
 fi
+

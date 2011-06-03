@@ -1,0 +1,88 @@
+/*
+
+*/
+var MultipleDispatchModule = new Class({
+	Extends: object, 
+
+	statics: {
+		out: $boo.MultipleDispatch( {
+			"Number": function( a ) {
+				System.Console.Write( 'int:' );
+				System.Console.Write( ' ' );
+				System.Console.WriteLine( a );
+			},
+			"Number": function( a ) {
+				System.Console.Write( 'double:' );
+				System.Console.Write( ' ' );
+				System.Console.WriteLine( a );
+			},
+			"RegExp": function( a ) {
+				System.Console.Write( 'regex:' );
+				System.Console.Write( ' ' );
+				System.Console.WriteLine( a );
+			},
+			"String": function( a ) { 
+				System.Console.Write( 'string:' );
+				System.Console.Write( ' ' );
+				System.Console.WriteLine( a );
+			},
+			"Boolean": function( a ) { 
+				System.Console.Write( 'bool:' );
+				System.Console.Write( ' ' );
+				System.Console.WriteLine( a );
+			}
+		} ),
+		Main: function( argv ) { 
+			MultipleDispatchModule.out( 1 );
+			MultipleDispatchModule.out( 1.0 );
+			MultipleDispatchModule.out( '1' );
+			MultipleDispatchModule.out( MultipleDispatchModule.$re$1 );
+			MultipleDispatchModule.out( true );
+		},
+		$re$1: null,
+		initialize: function(  ) { 
+			MultipleDispatchModule.$re$1 = $boo.regex( "1", "" );
+		}
+	},
+
+	initialize: function(  ) {
+		this.parent(  );
+	},
+});
+
+
+MultipleDispatchModule.initialize( )
+MultipleDispatchModule.Main( arguments );
+/*
+var out = $boo.MultipleDispatch( {
+	"Number": function( a ) {
+		System.Console.Write( 'int:' );
+		System.Console.Write( ' ' );
+		System.Console.WriteLine( a );
+	},
+	"Number": function( a ) {
+		System.Console.Write( 'double:' );
+		System.Console.Write( ' ' );
+		System.Console.WriteLine( a );
+	},
+	"RegExp": function( a ) {
+		System.Console.Write( 'regex:' );
+		System.Console.Write( ' ' );
+		System.Console.WriteLine( a );
+	},
+	"String": function( a ) { 
+		System.Console.Write( 'string:' );
+		System.Console.Write( ' ' );
+		System.Console.WriteLine( a );
+	},
+	"Boolean": function( a ) { 
+		System.Console.Write( 'bool:' );
+		System.Console.Write( ' ' );
+		System.Console.WriteLine( a );
+	}
+} );
+out( 1 );
+out( 1.0 );
+out( '1' );
+out( / / );
+out( true );*/

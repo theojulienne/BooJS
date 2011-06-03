@@ -92,7 +92,14 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 		Visit( r.Modifier ) # TODO
 		Write( ";" )
 		WriteLine( )
-		
+
+	def OnRaiseStatement( rs as RaiseStatement ):
+		WriteIndented( )
+		WriteKeyword( "throw " )
+		Visit( rs.Exception )
+		Visit( rs.Modifier ) # TODO?
+		Write( ";" )
+		WriteLine( )
 		
 	## Module
 	
@@ -120,7 +127,13 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 	## Class Stuff
 	
 	def OnClassDefinition( classDef as ClassDefinition ):
-		Write( "var " + classDef.Name + " = new Class({" )
+		inClass as bool = false
+		if not inClass:
+			Write( "var " + classDef.Name + " = " )
+		else:
+			Write( classDef.Name + ": " )
+
+		Write( "new Class({" )
 		WriteLine( )
 		Indent( )
 		
@@ -147,7 +160,11 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 				++i
 		
 		Dedent( )
-		Write( "});" )
+		Write( "})" )
+		if not inClass:
+			Write( ";" )
+		else:
+			Write( "," )
 		WriteLine( )
 	
 	def OnConstructor( constructorDef as Constructor ):
@@ -183,23 +200,53 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 		EndBlock( )	
 	
 	def OnRELiteralExpression( node as RELiteralExpression ):
-		Write( "/" )
+		Write( '$boo.regex( "' )
 		Write( node.Pattern )
-		Write( "/g" )
+		Write( '", "' )
+		Write( node.Options )
+		Write( '" )' )
 
 	def OnArrayLiteralExpression( node as ArrayLiteralExpression ):
-		Write("[");
+		Write( '$boo.array( ' );
+		Write( '[' );
 		i = 0
 		numItems = node.Items.Count
 		
 		if numItems != 0:
 			for item in node.Items:
 				if i != 0:
-					Write(", ")
+					Write( ', ' )
 				Visit( item )
 				i++
-		Write("]")
+		Write( ']' )
+		Write( ' )' )
 
+	def OnListLiteralExpression( node as ListLiteralExpression ):
+		Write( '$boo.list( [' );
+		i = 0
+		numItems = node.Items.Count
+		
+		if numItems != 0:
+			for item in node.Items:
+				if i != 0:
+					Write( ', ' )
+				Visit( item )
+				i++
+		Write( '] )' )
+
+	def OnHashLiteralExpression( node as HashLiteralExpression ):
+		Write( '$boo.hash( ' )
+		if node.Items.Count > 0:
+			Write( '{' )
+			WriteCommaSeparatedList( node.Items );
+			Write( '} ' )
+		Write( ')' )
+
+	def OnTimeSpanLiteralExpression( node as TimeSpanLiteralExpression ):
+		Write( '$boo.timespan( "' )
+		WriteTimeSpanLiteral( node.Value, _writer )
+		Write( '" )' )
+		
 	def OnSelfLiteralExpression( node as SelfLiteralExpression ):
 		WriteKeyword( "this" )
 		
@@ -433,8 +480,6 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 			*/
 		
 	def OnConditionalExpression( e as ConditionalExpression ):
-		# (a if condition else b)
-		# (condition?a:b)
 		Write( "(" )
 		Visit( e.Condition )
 		Write( "?" )
@@ -443,6 +488,10 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 		Visit( e.FalseValue )
 		Write( ")" )
 
+	def OnUnlessStatement( node as UnlessStatement ):
+		WriteUnlessBlock( "if", node )
+		WriteLine( )
+		
 	def OnIfStatement( node as IfStatement ):
 		WriteIfBlock( "if", node )
 		
@@ -460,6 +509,14 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 		Visit( ifs.Condition )
 		Write( " )" )
 		WriteBlock( ifs.TrueBlock )
+
+	def WriteUnlessBlock( keyword as string, node as UnlessStatement ):
+		WriteIndented( )
+		WriteKeyword( keyword )
+		Write( " ( !(" )
+		Visit( node.Condition )
+		Write( ") )" )
+		WriteBlock( node.Block )
 	
 	new def WriteElifs( node as IfStatement ) as Block:
 		falseBlock as Block = node.FalseBlock
@@ -595,9 +652,7 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 	## Operators
 	
 	static def GetUnaryOperatorText( op as UnaryOperatorType ) as string:
-		if op == UnaryOperatorType.Explode:
-				return "*"
-		elif op == UnaryOperatorType.PostIncrement or UnaryOperatorType.Increment:
+		if op == UnaryOperatorType.PostIncrement or UnaryOperatorType.Increment:
 				return "++"
 		elif op == UnaryOperatorType.PostDecrement or UnaryOperatorType.Decrement:
 				return "--"
@@ -607,10 +662,12 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 				return "! "
 		elif op == UnaryOperatorType.OnesComplement:
 				return "~"
+		elif op == UnaryOperatorType.Explode:
+				return "*" // Not Implemented?
 		elif op == UnaryOperatorType.AddressOf:
-				return "&"
+				return "&" // again?
 		elif op == UnaryOperatorType.Indirection:
-				return "*"
+				return "*" // again?
 		
 		raise ArgumentException( "op" )
 
@@ -686,20 +743,20 @@ public class JavascriptVisitor( BooPrinterVisitor ):
 				return ">>="
 		
 		elif op == BinaryOperatorType.Exponentiation:
-				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) // "**" // TODO
+				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "**"          -> Math.pow(lhs, rhs)
 		elif op == BinaryOperatorType.Member:
-				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "in"
+				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "in"          -> $boo.in_(lhs, rhs)
 		elif op == BinaryOperatorType.NotMember:
-				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "not in"
+				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "not in"      -> !$boo.in_(lhs, rhs)
 		elif op == BinaryOperatorType.ReferenceEquality:
-				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "is"
+				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "is"          -> $boo.is(lhs, rhs)
 		elif op == BinaryOperatorType.ReferenceInequality:
-				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "is not"
+				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "is not"      -> !$boo.is(lhs, rhs)
 		elif op == BinaryOperatorType.TypeTest:
-				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "isa"
+				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO "isa"         -> $boo.isa(lhs, rhs)
 		elif op == BinaryOperatorType.Match:
-				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO return "=~"
+				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO return "=~"   -> lhs.Match(rhs)
 		elif op == BinaryOperatorType.NotMatch:
-				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO return "!~"
+				raise NotImplementedException( "Not Implemented: " + op.ToString( ) ) # TODO return "!~"   -> !lhs.Match(rhs)
 		raise NotImplementedException( "Not Implemented: " + op.ToString( ) )
-		
+

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# eg "./invokejs tests/Conditionals.js"
+
+JS_LIBS="libjs/mootools-core-1.3.2.js libjs/support.v8.js libjs/booJS.js"
+d8 $JS_LIBS $1
+
